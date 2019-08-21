@@ -1,0 +1,125 @@
+---
+title: "Lin-Lab5"
+author: "Bin Lin"
+date: "2016-10-29"
+output: html_document
+---
+```{r, eval = TRUE}
+library(IS606)
+library(ggplot2)
+library(inference)
+#startLab('Lab5')
+#setwd('C:/Users/blin261/Documents/Lab5')
+#install.packages("inference")
+load("nc.RData")
+```
+
+Exercise 1: What are the cases in this data set? How many cases are there in our sample?
+
+The birth information of babies and their parents recorded in North Carolina. Total 1000 cases are in the sample. 
+```{r}
+head(nc)
+str(nc)
+summary(nc)
+by(nc$weight, nc$habit, mean)
+```
+
+
+Exercise 2: Make a side-by-side boxplot of habit and weight. What does the plot highlight about the relationship between these two variables?
+```{r}
+ggplot(data = nc, aes(x = habit, y = weight)) + geom_boxplot()
+```
+
+
+Exercise 3: Check if the conditions necessary for inference are satisfied. Note that you will need to obtain sample sizes to check the conditions. You can compute the group size using the same by command above but replacing mean with length.
+
+```{r}
+by(nc$weight, nc$habit, length)
+```
+
+
+Exercise 4: Write the hypotheses for testing if the average weights of babies born to smoking and non-smoking mothers are different.
+
+H0: Baby's Weight (smoking mother) = Baby's Weight (non-smoking mother)
+HA: Baby's Weight (smoking mother) != Baby's Weight (non-smoking mother)
+
+```{r}
+inference(y = nc$weight, x = nc$habit, est = "mean", type = "ht", null = 0, 
+          alternative = "twosided", method = "theoretical")
+```
+
+Exercise 5: Change the type argument to "ci" to construct and record a confidence interval for the difference between the weights of babies born to smoking and non-smoking mothers.
+
+95 % Confidence interval = ( -0.5777 , -0.0534 )
+
+```{r}
+inference(y = nc$weight, x = nc$habit, est = "mean", type = "ci", null = 0, 
+          alternative = "twosided", method = "theoretical", 
+          order = c("smoker","nonsmoker"))
+```
+
+On your own
+1. Calculate a 95% confidence interval for the average length of pregnancies (weeks) and interpret it in context. Note that since you're doing inference on a single population parameter, there is no explanatory variable, so you can omit the x variable from the function.
+
+
+95 % Confidence interval = ( 38.1528 , 38.5165 ), which means there is 95% chance that this interval is going to catch the true population mean. 
+
+```{r}
+inference(y = nc$weeks, est = "mean", type = "ci", null = 0, 
+          alternative = "twosided", method = "theoretical")
+```
+
+
+2. Calculate a new confidence interval for the same parameter at the 90% confidence level. You can change the confidence level by adding a new argument to the function: conflevel = 0.90.
+
+90 % Confidence interval = ( 38.182 , 38.4873 )
+```{r}
+inference(y = nc$weeks, est = "mean", type = "ci", conflevel = 0.9, null = 0, 
+          alternative = "twosided", method = "theoretical")
+```
+
+
+
+3. Conduct a hypothesis test evaluating whether the average weight gained by younger mothers is different than the average weight gained by mature mothers.
+
+H0: mu_mature mom - mu_younger mom = 0 
+HA: mu_mature mom - mu_younger mom != 0 
+Standard error = 0.152 
+Test statistic: Z =  0.186 
+p-value =  0.8526
+
+Since the p-value is greater than 0.05, we fail to reject the null hypothesis, which means the average weight gained by younger mothers could be same as the average weight gained by mature mothers.  
+
+```{r}
+inference(y = nc$weight, x = nc$mature, est = "mean", type = "ht", null = 0, 
+          alternative = "twosided", method = "theoretical")
+```
+
+
+4. Now, a non-inference task: Determine the age cutoff for younger and mature mothers. Use a method of your choice, and explain how your method works.
+
+I think the cut off for younger mothers is 34(inclusive) and the cut off for the mature mothers is 35(inclusive). The method I use is just to determine the mother age above which is considered to be mature and under which is considered young.
+
+max(nc$mage[nc$mature == "younger mom"])
+min(nc$mage[nc$mature == "mature mom"])
+
+
+5. Pick a pair of numerical and categorical variables and come up with a research question evaluating the relationship between these variables. Formulate the question in a way that it can be answered using a hypothesis test and/or a confidence interval. Answer your question using the inference function, report the statistical results, and also provide an explanation in plain language.
+
+I will pick premie and weight as my variables for the hypothetical testing. 
+
+H0: Premature babies and full term babies have same average birth weight
+HA: Premature babies and full term babies have different average birth weight.
+
+```{r}
+inference(y = nc$weight, x = nc$premie, est = "mean", type = "ht", null = 0, 
+          alternative = "twosided", method = "theoretical")
+```
+
+
+H0: mu_full term - mu_premie = 0 
+HA: mu_full term - mu_premie != 0 
+Standard error = 0.164 
+Test statistic: Z =  14.216 
+p-value =  0 
+Because p-value is very closed to 0, which means the difference of average birth weight between ppremature babies and full term babies are very statistical significant at any alpha levels. So that the hypothesis test reject the null hypothesis, therefore the alternative hypothesis is true.

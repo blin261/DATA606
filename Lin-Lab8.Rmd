@@ -1,0 +1,272 @@
+---
+title: "Lab8-Lin"
+author: "Bin Lin"
+date: "2016-12-4"
+output: html_document
+---
+
+```{r, eval=TRUE}
+#install.packages("StMoSim")
+library(StMoSim)
+library(IS606)
+#startLab('Lab8')
+setwd('C:/Users/blin261/Documents/Lab8')
+load("more/evals.RData")
+```
+
+Exercise 1: Is this an observational study or an experiment? The original research question posed in the paper is whether beauty leads directly to the differences in course evaluations. Given the study design, is it possible to answer this question as it is phrased? If not, rephrase the question.
+
+This is an observational study. Since we are not introducing intervention to this study. There is no control or experimental group. All it is doing is to evaluate existing data. It is not possible to answer this question as it is phrased. The question can be is the instructor's beauty positively or negatively correlated with course evaluation. 
+
+
+
+Exercise 2: Describe the distribution of score. Is the distribution skewed? What does that tell you about how students rate courses? Is this what you expected to see? Why, or why not?
+
+According to the histogram of score, this distribution is skewed to the left. There are more students give instructor higher scores than the lower scores. This is not what I expected to see. I expected the distribution will closed to normal as it is unimodal, bell-shaped and symmetric. 
+
+```{r}
+hist(evals$score)
+```
+
+
+
+Exercise 3: Excluding score, select two other variables and describe their relationship using an appropriate visualization (scatterplot, side-by-side boxplots, or mosaic plot).
+
+As shown in the boxplot, male instructors are much more likely than female instrctors to be tenured. 
+```{r}
+plot(evals$gender, evals$rank)
+plot(evals$score ~ evals$bty_avg)
+```
+
+
+
+Exercise 4: Replot the scatterplot, but this time use the function jitter() on the yy- or the xx-coordinate. (Use ?jitter to learn more.) What was misleading about the initial scatterplot?
+
+The initial scatterplot have multiple points that have same value. Because they overlap each other, on the scatterplot, they appear to be just one point. 
+```{r}
+plot(evals$score ~ jitter(evals$bty_avg))
+```
+
+
+
+Exercise 5: Let's see if the apparent trend in the plot is something more than natural variation. Fit a linear model called m_bty to predict average professor score by average beauty rating and add the line to your plot using abline(m_bty). Write out the equation for the linear model and interpret the slope. Is average beauty score a statistically significant predictor? Does it appear to be a practically significant predictor?
+
+The equaltion for the linear model is: y = 3.88034 + 0.06664 * x. It is statistically significant because the p-value is 5.08e-05 which is very closed to 0. However, it may not be practically significant, because the slope of this line is only 0.06664, which mean for any 1 point increase of the beauty score, the instructors' evaluation score only increase by barely 0.0664. 
+
+
+```{r}
+m_bty <- lm(evals$score ~ evals$bty_avg)
+summary(m_bty)
+```
+
+
+
+Exercise 6: Use residual plots to evaluate whether the conditions of least squares regression are reasonable. Provide plots and comments for each one (see the Simple Regression Lab for a reminder of how to make these).
+```{r}
+
+plot(m_bty$residuals ~ evals$bty_avg)
+abline(h = 0, lty = 3)
+hist(m_bty$residuals)
+```
+
+Linearity: The scatterplot shows linear relationship, and the residual plot shows no patten, and all the data points are evenly distributed on both side of the 0 line. 
+
+Nearly normal residuals: The histogram of the residual shows unimodel and bell shaped distribution that is quite symmetric. The normal probability plot also indicate normal distribution of residuals. 
+
+Constant variability: The variability of residuals around the 0 line is roughly constant. No pattern or fan shape observed. 
+
+```{r}
+plot(evals$bty_avg ~ evals$bty_f1lower)
+cor(evals$bty_avg, evals$bty_f1lower)
+plot(evals[,13:19])
+m_bty_gen <- lm(evals$score ~ evals$bty_avg + evals$gender, data = evals)
+summary(m_bty_gen)
+```
+
+
+
+Exercise 7: P-values and parameter estimates should only be trusted if the conditions for the regression are reasonable. Verify that the conditions for this model are reasonable using diagnostic plots.
+
+```{r}
+#1. residuals are nearly normal (primary concern relates to residuals that are outliers)
+qqnormSim(m_bty_gen$residuals)
+qqline(m_bty_gen$residuals)
+
+hist(m_bty_gen$residuals)
+# The qqplot is bended which means the distribution of residual is not very normal. Histogram is skewed which tells us the same thing.
+
+#2. residuals have constant variability
+plot((m_bty_gen$residuals) ~ m_bty_gen$fitted)
+
+
+plot(abs(m_bty_gen$residuals) ~ m_bty_gen$fitted)
+abline(h = 0, lty = 3)
+
+#The scatter plot shows no patterns of the residuals, most of residuals are closed to 0, which means they are quite constant. 
+
+
+#3. residuals are independent
+plot(m_bty_gen$residuals ~ c(1:nrow(evals)))
+# The values of residuals does not appear to affect each other. They are pretty random through out. 
+
+#4. each variable is linearly related to the outcome
+m_gen <- lm(evals$score ~ evals$gender)
+plot(m_gen$residuals ~ evals$gender)
+abline(h = 0, lty = 3)
+
+m_bty_avg <- lm(evals$score ~ evals$bty_avg)
+plot(m_bty_avg$residuals ~ evals$bty_avg)
+abline(h = 0, lty = 3)
+
+#It seems like gender dose affects the evaluation score based on the boxplot. In addition, there is no pattern observed in the residual scatter plot of bty_avg, and all the data points are evenly distributed on both side of the 0 line. So the relationship is linear
+```
+
+
+
+Exercise 8: Is bty_avg still a significant predictor of score? Has the addition of gender to the model changed the parameter estimate for bty_avg?
+
+Yes, because the p-value is 6.48e-06 which is closed to 0, so it is still a significant predictor of score. Yes, since the the slope and standard error for bty_avg are both changed.  
+
+
+
+Exercise 9: What is the equation of the line corresponding to males? (Hint: For males, the parameter estimate is multiplied by 1.) For two professors who received the same beauty rating, which gender tends to have the higher course evaluation score?
+
+y = 3.74734 + 0.07416 * X1 + 0.17239 * 1
+For two professors who received the same beauty rating, male gender tende to have the higher course evaluation score. 
+
+
+
+Exercise 10: Create a new model called m_bty_rank with gender removed and rank added in. How does R appear to handle categorical variables that have more than two levels? Note that the rank variable has three levels: teaching,  tenure track, tenured.
+
+R will use teaching as a reference. Only two predictors shows up which are tenure track and tenured
+```{r}
+m_bty_rank <- lm(evals$score ~ evals$bty_avg + evals$rank)
+summary(m_bty_rank)
+```
+
+
+
+Exercise 11: Which variable would you expect to have the highest p-value in this model? Why? Hint: Think about which variable would you expect to not have any association with the professor score.
+
+"cls_profs" (number of professors teaching sections in course in sample: single, multiple) has the highest p-value in this model. The p-value is 0.77806.
+    
+```{r}
+m_full <- lm(score ~ rank + ethnicity + gender + language + age + cls_perc_eval 
+             + cls_students + cls_level + cls_profs + cls_credits + bty_avg 
+             + pic_outfit + pic_color, data = evals)
+summary(m_full)
+```
+
+
+
+Exercise 12: Check your suspicions from the previous exercise. Include the model output in your response.
+
+If we only build the linear model between evaluation score and cls_profs, the p-value (0.585) still be over 0.05. The boxplot shows the distribution between single and multiple professors teaching in the course are pretty much the same. 
+```{r}
+m_bty_cls_profs <- lm(evals$score ~ evals$cls_profs)
+summary(m_bty_cls_profs)
+plot(evals$score ~ evals$cls_profs)
+evals$ethnicity
+```
+
+
+Exercise 13: Interpret the coefficient associated with the ethnicity variable.
+
+The coefficient associated with ethnicity is 0.1235, which means when all the other variables are the same, the prefessot who is not a minority will have average increase of 0.1235 of the evaluation score.
+
+
+
+Exercise 14: Drop the variable with the highest p-value and re-fit the model. Did the coefficients and significance of the other explanatory variables change? (One of the things that makes multiple regression interesting is that coefficient estimates depend on the other variables that are included in the model.) If not, what does this say about whether or not the dropped variable was collinear with the other explanatory variables?
+
+Yes, both the coefficients and significance have changed. If not, it tell us the variable that is removed is not collinear with other explanatory variables.
+```{r}
+m_full <- lm(score ~ rank + ethnicity + gender + language + age + cls_perc_eval 
+             + cls_students + cls_level + cls_credits + bty_avg 
+             + pic_outfit + pic_color, data = evals)
+summary(m_full)
+```
+
+
+
+Exercise 15: Using backward-selection and p-value as the selection criterion, determine the best model. You do not need to show all steps in your answer, just the output for the final model. Also, write out the linear model for predicting score based on the final model you settle on.
+
+Y = 3.772 + 0.168 * ethnicity + 0.207 * gender -0.206 * languege -0.006 * age + 0.005 * cls_perc_eval + 0.505 * cls_credits + 0.051 * bty_avg - 0.191 * pic_color  
+```{r}
+m_backward <- lm(score ~ ethnicity + gender + language + age + cls_perc_eval + cls_credits + bty_avg 
+             + pic_color, data = evals)
+summary(m_backward)
+```
+
+
+
+Exercise 16: Verify that the conditions for this model are reasonable using diagnostic plots.
+```{r}
+#1. residuals are nearly normal (primary concern relates to residuals that are outliers)
+qqnormSim(m_backward$residuals)
+qqline(m_backward$residuals)
+
+hist(m_backward$residuals)
+
+# The qqplot is bended which means the distribution of residual is not very normal. Histogram is skewed which tells us the same thing.
+
+
+#2. residuals have constant variability
+plot((m_backward$residuals) ~ m_bty_gen$fitted)
+
+
+plot(abs(m_backward$residuals) ~ m_bty_gen$fitted)
+abline(h = 0, lty = 3)
+
+#The scatter plot shows no patterns of the residuals, most of residuals are closed to 0, which means they are quite constant. 
+
+#3. residuals are independent
+plot(m_backward$residuals ~ c(1:nrow(evals)))
+
+# The values of residuals does not appear to affect each other. They are pretty random through out. 
+
+
+#4. each variable is linearly related to the outcome
+m_ethnicity <- lm(evals$score ~ evals$ethnicity)
+plot(m_ethnicity$residuals ~ evals$ethnicity)
+abline(h = 0, lty = 3)
+
+m_language <- lm(evals$score ~ evals$language)
+plot(m_language$residuals ~ evals$language)
+abline(h = 0, lty = 3)
+
+m_age <- lm(evals$score ~ evals$age)
+plot(m_age$residuals ~ evals$age)
+abline(h = 0, lty = 3)
+
+m_cls_perc_eval <- lm(evals$score ~ evals$cls_perc_eval)
+plot(m_cls_perc_eval$residuals ~ evals$cls_perc_eval)
+abline(h = 0, lty = 3)
+
+m_cls_credits <- lm(evals$score ~ evals$cls_credits)
+plot(m_cls_credits$residuals ~ evals$cls_credits)
+abline(h = 0, lty = 3)
+
+m_pic_color <- lm(evals$score ~ evals$pic_color)
+plot(m_pic_color$residuals ~ evals$pic_color)
+abline(h = 0, lty = 3)
+
+nrow(evals)
+#According to exercise 7, gender and bty_avg are linearly related to outcome. All the graphs showed on top reveals that there are linear relationship bewteen the evalation and these explanatory variables. 
+```
+
+Exercise 17: The original paper describes how these data were gathered by taking a sample of professors from the University of Texas at Austin and including all courses that they have taught. Considering that each row represents a course, could this new information have an impact on any of the conditions of linear regression?
+
+Yes, because if some professors are teaching more than one course, the course itself might become an explanatory variable, or it will influence the final evaluation score.  (difficult courses maybe associated with lower evaluation score)
+
+
+
+Exercise 18: Based on your final model, describe the characteristics of a professor and course at University of Texas at Austin that would be associated with a high evaluation score.
+
+The professors who are  non-minority, male, english speaking, young age, teaching one credits course, having black&white color picture, having higher percentage of studetns in class who completed evaluation tend to have higher evaluation score. 
+
+
+
+Exercise 19: Would you be comfortable generalizing your conclusions to apply to professors generally (at any university)? Why or why not?
+
+No, because this dataset only has 463 samples. And it is only from one university-University of Texas at Austin. 
+
