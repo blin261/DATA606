@@ -1,0 +1,207 @@
+---
+title: "Final Project-Lin"
+author: "Bin Lin"
+date: "2016-12-15"
+output: html_document
+---
+1. Introduction: What is your research question? Why do you care? Why should others care?
+
+The topic I want to study is to see if cars made by certain manufacturers tend to have higher carbon dioxide emission. The Volkwagen emissions scandal which erupted on September 2015 drives me to conduct this study. As most people know, the Volkwagen intentionally cheated on the laboratory emissions testing to have its vehicles' nitrogen oxide and carbon dioxide output meet US standards. Approximately 11 million cars worldwide are implicated. About 500K of them are sold in United States. I do care about the vehicles' emission issue, because I think the economy growth will not be sustainable unless we protect our enviroment in the meantime. The global warming is threatening a lot of costal cities including New York City as the result of rising sea level.Extreme weather will eventually hurt human beings, in the form of hurricane, thunderstorms and many other types of El Nino weather. Not only I should care about this issue, everyone living in this planet are responsible for taking care of it. No body can get away with it if the environment is devastated. 
+
+
+2. Data: Write about the data from your proposal in text form. Address the following points:
+
+Data collection: Describe how the data were collected.
+
+Data scientist Hadley Wickham uploads this data set, it can be downloaded from the following link:
+https://github.com/hadley/fueleconomy. After we have the dataset saved in the local machine, we can just use read.table method to load it into RStudio.
+
+
+Cases: What are the cases? (Remember: case = units of observation or units of experiment)
+
+The dataset I collected contains fuel economy data from the EPA, 1985-2015. There are total 34632 observations. Each observation represents a model of an vehicle with unique EPA identifier. There are total 74 variables. However, only some variables with complete data such as: id, make, year, class, trans, drive, cyl, displ, fuel, hwy, cty, co2TailpipeGpm, and so on. 
+
+
+
+Variables: What are the two variables you will be studying? State the type of each variable.
+
+Two variables will get analyze heavily, which are the manufacturers and tail pipe carbon dioxide emission per 100 miles. the manufacturers are categorical variables. The tail carbon dioxide emission per 100 miles is a continuous numerical variable
+
+
+Type of study: What is the type of study, observational or an experiment? Explain how you've arrived at your conclusion using information on the sampling and/or experimental design.
+
+Observational Study, since we are not actually doing the experiment. There is no control or experimental group. All I am doing is analysing an existing data.
+
+
+
+Scope of inference - generalizability: Identify the population of interest, and whether the findings from this analysis can be generalized to that population, or, if not, a subsection of that population. Explain why or why not. Also discuss any potential sources of bias that might prevent generalizability.
+
+The population of interest is all vehicles in the United States and all its manufacturers. Due to the facts this dataset is from EPA (Environmental Protection Agency), it is generalizable to the population studied, because all the vehicles have to meet the EPA's emission standard or the stricter one before it
+can be sold in the United States. 
+
+One potential source of bias is the selection bias. According to Hadley Wickham,this datasets include models that have at least 10 years worth of data. Many new models may not be included in this datasets. However, they take up big market shares in the current auto market. So the selection bias might prevent generalizability.
+
+
+
+Scope of inference - causality: Can these data be used to establish causal links between the variables of interest? Explain why or why not.
+
+These data can not be used to establish causal links between two variables. We will have to design an experiment with both explanatory variable and response variable to establish causal connection. This study is only observational, we did not interfere with how the data arise. Only correlation can be established in this case.
+
+
+3. Exploratory data analysis: Perform relevant descriptive statistics, including summary statistics and visualization of the data. Also address what the exploratory data analysis suggests about your research question.
+
+The following code just to get the dataset clean and ready for the analysis
+```{r, eval=TRUE}
+#Load any neccessary packages
+library(IS606)
+library(psych)
+library(vcd)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+#Then I load the dataset into RStudio. Explore what kind of data are in this file. As we can see there are  total 34631 observations. In addition, I take subset of the data that are meaningful and related to the analysis. 
+raw_data <- read.table("vehicles.csv", sep = ",", stringsAsFactors = FALSE, header = TRUE)
+nrow(raw_data)
+str(raw_data)
+vehicles <- raw_data[,c("barrels08", "co2TailpipeGpm", "cylinders", "displ", "drive", "engId", "fuelCost08", "fuelType", "fuelType1", "id", "make", "model", "trany", "UCity", "VClass", "year")]
+head(vehicles)
+```
+
+```{r}
+#There are a couple of manufacturers. Some of them own very few models of vehicles. For the sake of explanation I only focuse on those manufacturers that own more than 1500 models. Five of giant car producers end up on that list. 
+vehicles <- vehicles%>%
+  group_by(make)%>%
+  mutate(count = n())%>%
+  filter(count >= 1500)
+head(vehicles)
+```
+
+
+Then I just create a table and barplot just to get an idea about what kind of data we are dealing with. 
+```{r}
+table(vehicles$make, useNA = "ifany")
+barplot(table(vehicles$make, useNA = "ifany"))
+```
+
+
+From the summary statistics, we found out that the tail pipe carbon dioxide emission per 100 miles ranges from 0 to 987.4 gallon. The histogram of this numerical data show a unimodel, symmetric, and bell-shaped curve. It correspond to normal distribution. To further prove this findings, I created a normal probability plot, so called qq plot, I found that all the data points kind line up and stay very closed to the line, with very few points that are deviated from the line. Therefore, we can conclude the carbon dioxide emission of vehicles are almost normally distributed. 
+```{r}
+summary(vehicles$co2TailpipeGpm)
+hist(vehicles$co2TailpipeGpm)
+qqnorm(vehicles$co2TailpipeGpm)
+qqline(vehicles$co2TailpipeGpm)
+```
+
+
+4. Inference: If your data fails some conditions and you can't use a theoretical method, then you should use simulation. If you can use both methods, then you should use both methods. It is your responsibility to figure out the appropriate methodology. Check conditions
+
+Theoretical inference (if possible) - hypothesis test and confidence interval
+Simulation based inference - hypothesis test and confidence interval
+Brief description of methodology that reflects your conceptual understanding
+
+
+Theoretical Inference:
+
+Since I am comparing means of multiple groups, I can not use either Z or T statistics. I need to use ANOVA test and F statistic.
+
+Conditions: 
+1. The observations should be independent within and between groups
+
+First of all, this data include majority of vehicles that are sold in the United States, therefore, it is definitely more than 10% of the total population. In addition, each group has very different sample size. That is why we have to think about within and between group independence individually.  
+
+Between groups: Since automobile industry is also a business. Therefore, auto companies probably not going to share their technologies to reduce the carbon dioxide emission. We will assume they are independent between groups.
+Within groups: Since each model is different from each other. It is impossible that one model will affect the other in terms of increasing or decreasing other models emission profile.
+
+
+2. The observations within each group should be nearly normal. Especially important when the sample sizes are small. How do we check for normality?
+
+The following code shows both histogram and qq plot of carbon dioxide emission for each manufacturers follow normal distribution.
+```{r}
+data1 <- subset(vehicles, vehicles$make == "Chevrolet")
+hist(data1$co2TailpipeGpm)
+qqnorm(data1$co2TailpipeGpm)
+qqline(data1$co2TailpipeGpm)
+
+
+data2 <- subset(vehicles, vehicles$make == "Dodge")
+hist(data1$co2TailpipeGpm)
+qqnorm(data2$co2TailpipeGpm)
+qqline(data2$co2TailpipeGpm)
+
+
+data3 <- subset(vehicles, vehicles$make == "Ford")
+hist(data1$co2TailpipeGpm)
+qqnorm(data3$co2TailpipeGpm)
+qqline(data3$co2TailpipeGpm)
+
+
+data4 <- subset(vehicles, vehicles$make == "GMC")
+hist(data1$co2TailpipeGpm)
+qqnorm(data4$co2TailpipeGpm)
+qqline(data4$co2TailpipeGpm)
+
+
+data5 <- subset(vehicles, vehicles$make == "Toyota")
+hist(data1$co2TailpipeGpm)
+qqnorm(data5$co2TailpipeGpm)
+qqline(data5$co2TailpipeGpm)
+```
+
+
+3. The variability across the groups should be about equal. Especially important when the sample sizes differ between groups.
+
+From the boxplot of carbon dioxide emission for each manufacturers, it seems like each group has very different spread of data. For instance GMC, carbon dioxide emission of its models fall into a very narrow range. The opposite is true for dodge or ford. From summary statistics created by describeBy function, we can tell between groups there exist five standard deviations that are very different from each other. Some are in the 80's, some are more than 140's. 
+```{r}
+boxplot(vehicles$co2TailpipeGpm ~ vehicles$make)
+describeBy(vehicles$co2TailpipeGpm, group = vehicles$make, skew = FALSE, mat = TRUE)
+```
+Therefore, since the data does not meet the third condition for conducting an ANOVA test. I will have to use the simulation based method. 
+
+
+Simulation Based Inference:
+Null Hypothesis:
+H0: \mu (Chevrolet) = \mu (Ford) = \mu(Dodge) = \mu(GMC) = \mu(Toyota)
+Alternative Hypothesis:
+HA: \mu (Chevrolet) != \mu (Ford) != \mu(Dodge) != \mu(GMC) != \mu(Toyota)
+
+First step, I have to generate those random numbers that are normally distributed. From the summary statistics, I can obtain the mean and standard deviations for each group. And I also keep the sample size constant at 100. 
+```{r}
+set.seed(888)
+chevrolet_carbon <- rnorm(100, mean = 517.153, sd = 113.816)
+dodge_carbon <- rnorm(100, mean = 553.462, sd = 148.058)
+ford_carbon <- rnorm(100, mean = 520.749, sd = 132.607)
+gmc_carbon <- rnorm(100, mean = 574.769, sd = 85.136)
+toyota_carbon <- rnorm(100, mean = 436.581, sd = 109.578)
+```
+
+
+Afterwards, I created an data frame that will be pass on as parameters for function aov, which will be responsible for creating ANOVA test. 
+```{r}
+carbon <- c(chevrolet_carbon, dodge_carbon, ford_carbon, gmc_carbon, toyota_carbon)
+manufacturers <- c(replicate(100, "Chevrolet"), replicate(100, "Dodge"), replicate(100, "Ford"), replicate(100, "GMC"), replicate(100, "Toyota"))
+cars <- data.frame(carbon, manufacturers)
+```
+
+The result of the following code tells us the most information. From this summary statistics, we can know the degree of freedom of this test is 4. Sum of square between groups (SSG) is 981332 and sum of squares error (SSE) is 6632797. So the Sum of squares total(SST) is 7614129. The F value is equal to mean square errors between group (MSG) divided by mean square errors within group (MSE). 245333 / 13400 = 18.31 which is quite large. The p-value for F-statistic is closed to 0. Therefore, the differences between the mean of amount of carbon dioxide emission from vehicles of each manufacturers are statistically significant. 
+
+```{r}
+car_aov <- aov(cars$carbon ~ cars$manufacturers)
+summary(car_aov)
+```
+
+
+Since the two-way ANOVA test only tell us if the means are different across group, it does not tell me if the mean of one group is higher or lower than the other. The function called TukeyHSD shows us the result from comparing groups pair-wise. It also gives us the p-value to show if the differences are statistically significant. In addition, the confint function gives me the 95% confidence interval of that result. In this case, the R is using Chevrolet as a reference.   
+```{r}
+TukeyHSD(car_aov)
+confint(car_aov)
+```
+
+5. Conclusion: Write a brief summary of your findings without repeating your statements from earlier. Also include a discussion of what you have learned about your research question and the data you collected. You may also want to include ideas for possible future research.
+
+
+According to the result we obtained from the above, Toyota is the winner among all in terms of the lowest carbon dioxide emission from the vehicles which it manufactures. If we directly compare the mean of carbon dioxide emission of Toyota's vehicle against thost of others, the differences are all statistically significant. (p-value less than 5%) and the confidence level way below 0. 
+
+From this research questions, I realize under the regulation of EPA on carbon dioxide emission, some car manufacturer not only meet the standard, but they are way better than the standard. If I got a chance to do further study on this dataset, I want to investigate which manufacturer produce cars that are most energy efficient. 
+
