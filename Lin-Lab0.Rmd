@@ -1,0 +1,52 @@
+---
+title: "DATA606-Lab0"
+author: "Bin Lin"
+date: "2016-8-31"
+output: html_document
+---
+
+
+```{r}
+source("more/present.R")
+source("more/arbuthnot.R")
+
+```
+
+1. What years are included in this data set? What are the dimensions of the data frame and what are the variable or column names?
+
+1940-2002
+
+```{r}
+present
+dim(present)
+names(present)
+```
+
+
+2. How do these counts compare to Arbuthnot's? Are they on a similar scale?
+
+The counts appear on present datasets are much bigger than that in Arbuthnot datasets. They are not on similar scale. The counts in present datasets are millions. However, the counts in Arbuthnot are in thousands.
+
+
+3. Make a plot that displays the boy-to-girl ratio for every year in the data set. What do you see? Does Arbuthnot's observation about boys being born in greater proportion than girls hold up in the U.S.? Include the plot in your response.
+
+The figure from Arbuthnot shows the proportion of boy-to-girl ratio ocillating between 1 and 1.15. There is not observable trend on the ratio over years. The figure generated from present datasets has shown the ratio gradually keeps decreasing even though there are still more boys born than girls. 
+
+```{r}
+plot(arbuthnot$year, arbuthnot$boys / arbuthnot$girls, type="l")
+
+plot(present$year, present$boys / present$girls, type = "l")
+
+```
+
+4. In what year did we see the most total number of births in the U.S.? You can refer to the help files or the R reference card http://cran.r-project.org/doc/contrib/Short-refcard.pdf to find helpful commands.
+
+1961
+
+```{r}
+max(present$boys+present$girls)
+present$year[which.max(present$boys+present$girls)]
+```
+
+
+

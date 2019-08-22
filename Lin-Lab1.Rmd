@@ -1,0 +1,147 @@
+---
+title: "Lab-1"
+author: "Bin Lin"
+date: "2016-9-4"
+output: html_document
+---
+
+```{r}
+
+source("more/cdc.R")
+
+```
+
+Exercise 1: How many cases are there in this data set? How many variables? For each variable, identify its data type (e.g. categorical, discrete).
+
+20000 observations, 9 variables. The data types of each variables are shown in the following R code. 
+```{r}
+str(cdc)
+```
+
+
+Exercise 2: Create a numerical summary for height and age, and compute the interquartile range for each. Compute the relative frequency distribution for gender and exerany. How many males are in the sample? What proportion of the sample reports being in excellent health?
+
+```{r}
+
+#Summary for height and age and their interquatile range
+summary(cdc$height)
+70-64
+summary(cdc$age)
+57-31
+
+#Relative frequency tables of gender and exerany
+table(cdc$gender)/20000
+table(cdc$exerany)/20000
+
+#Number of males
+0.47845*20000
+
+#Proportion of the sample being in excellent health = 23.285%
+table(cdc$genhlth)/20000
+
+```
+
+
+Exercise 3. What does the mosaic plot reveal about smoking habits and gender?
+
+```{r}
+#It tells us that male has relatively higher proportion of smoking population compare to female
+mosaicplot(table(cdc$gender,cdc$smoke100))
+
+```
+
+
+
+Exercise 4. Create a new object called under23_and_smoke that contains all observations of respondents under the age of 23 that have smoked 100 cigarettes in their lifetime. Write the command you used to create the new object as the answer to this exercise.
+
+```{r}
+
+under23_and_smoke <- subset(cdc, cdc$age < 23 & cdc$smoke100 == 1)
+
+```
+
+Exercise 5. What does this box plot show? Pick another categorical variable from the data set and see how it relates to BMI. List the variable you chose, why you might think it would have a relationship to BMI, and indicate what the figure seems to suggest.
+
+```{r}
+#AS the health status of  people gets poorer and poorer, their BMI tend to go up. 
+
+bmi <- (cdc$weight / cdc$height^2) * 703
+boxplot(bmi ~ cdc$genhlth)
+
+#This boxplot shows if people have been exercising, their BMI tend to be smaller. Because I think exercise will burn more calories, therefore poeple lose weight. Their BMI will decrease.  
+boxplot(bmi ~ cdc$exerany)
+
+```
+
+
+
+
+1. Make a scatterplot of weight versus desired weight. Describe the relationship between these two variables.
+
+
+```{r}
+#There is a positive linear relationship betweem people's weight and their desired weight. As the weight increases, the corresponding desired weight also increases. 
+
+plot(cdc$weight, cdc$wtdesire)
+```
+
+2. Let's consider a new variable: the difference between desired weight (wtdesire) and current weight (weight). Create this new variable by subtracting the two columns in the data frame and assigning them to a new object called wdiff.
+
+```{r}
+wdiff <- cdc$weight - cdc$wtdesire
+```
+
+3. What type of data is wdiff? If an observation wdiff is 0, what does this mean about the person's weight and desired weight. What if wdiff is positive or negative?
+
+
+
+```{r}
+#The data type of wdiff is integer. If wdiff is 0, that means person's weight equals to his or her desired weight. If wdiff is positive, that means person's weight is greater the desired weight. He or she needs to lose weight to achieve desired body weight. If wdiff is negative, that means that person's wight is less than the desired weight. He or she needs to gain weight to achieve desired body weight. 
+
+str(wdiff)
+```
+
+
+4. Describe the distribution of wdiff in terms of its center, shape, and spread, including any plots you use. What does this tell us about how people feel about their current weight?
+
+
+```{r}
+#From the summary statement, we know the median of this dataset is 10, the range is from -500 to 300lb. So based on the raw data, there are a lot of outliers. For example, someone whose weight is 500lb less than the desired body weight, and someone whose weight are 300 lb more than the desired body weight. The graphs I created based on wdiff is very difficult the tell the spread, shape and center of the data. That is why I subset the dataset to include all the data that fall into (-100, 200) range. I got much better graph. The center of the data set is about 10. It only has one peak which is between (-5, 0), so it is a unimodel shape. The distribution is right skewed, according to the histogram. The figure tell us most people feel they are overweight by 10lb or so. Very few people feel they are overweight by more than 100lbs.  
+
+summary(wdiff)
+boxplot(wdiff)
+hist(wdiff, breaks = 100)
+
+wd <- subset(wdiff, wdiff>= -100 & wdiff <=200)
+
+summary(wd)
+boxplot(wd)
+hist(wd, breaks = 100)
+
+```
+
+
+5. Using numerical summaries and a side-by-side box plot, determine if men tend to view their weight differently than women.
+
+```{r}
+
+#based on this boxplots, we can visually see (even though it is difficult), the female population will perceive themselves to be more overweight compare to the male population. As we can see most of the inner box of the female boxplot lie above that of the male boxplot.In addition to that, male population have more observations that have desired and actual weight difference lower than the lower whisker line. As shown in the figure, the dots are much darker in the male boplot under below the lower whisker than those in the female boxplot. 
+
+boxplot(wdiff ~ cdc$gender)
+```
+
+
+6. Now it's time to get creative. Find the mean and standard deviation of weight and determine what proportion of the weights are within one standard deviation of the mean.
+
+```{r}
+m <- mean(cdc$weight)
+s <- sd(cdc$weight)
+
+#the proportion is about 70.76%
+sub <- subset(cdc, cdc$weight > (m-s) & cdc$weight <= (m+s))
+dim(sub)/20000
+
+```
+
+
+
